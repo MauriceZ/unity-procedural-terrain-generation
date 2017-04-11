@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour {
-  private static Vector2 CHUNK_SIZE = new Vector2(25, 25);
-  private static int BLOCK_SIZE = 1;
+  public static Vector2 CHUNK_SIZE = new Vector2(25, 25);
+  public static int BLOCK_SIZE = 1;
 
   public static Chunk Instantiate(TerrainGenerator terrainGenerator, int chunkX, int chunkY) {
     var chunk = Instantiate (terrainGenerator.chunkPrefab, terrainGenerator.transform) as Chunk;
