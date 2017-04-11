@@ -2,15 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Bloc : MonoBehaviour {
+public class Block {
+  public Vector2 position { get; private set; }
+  public int Height { get; private set; }
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+  public Block(int x, int y, int height) {
+    position = new Vector2(x, y);
+    Height = height;
+  }
 }
