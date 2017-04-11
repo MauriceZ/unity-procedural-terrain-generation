@@ -3,11 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour {
-  private static Vector2 CHUNK_SIZE = new Vector2(21, 21);
+  private static Vector2 CHUNK_SIZE = new Vector2(25, 25);
   private static int BLOCK_SIZE = 1;
 
+  public static Chunk Instantiate(TerrainGenerator terrainGenerator, int chunkX, int chunkY) {
+    var chunk = Instantiate (terrainGenerator.chunkPrefab, terrainGenerator.transform) as Chunk;
+    chunk.terrainGenerator = terrainGenerator;
+    chunk.origin = new Vector2(chunkX * CHUNK_SIZE.x, chunkY * CHUNK_SIZE.y);
+    chunk.Generate();
+    return chunk;
+  }
+
+  public Vector2 origin;
   private Block[,] blocks;
-  private Vector2 origin;
+  private TerrainGenerator terrainGenerator;
 
   public int lowerX { get { return (int)origin.x - (int)CHUNK_SIZE.x/2; }}
   public int upperX { get { return (int)origin.x + (int)CHUNK_SIZE.x/2; }}
@@ -17,26 +26,14 @@ public class Chunk : MonoBehaviour {
   private List<Vector3> vertices;
   private List<Vector2> uv;
   private List<int> triangles;
-  private Mesh mesh;
+  private List<Color> colors;
 
-	// Use this for initialization
-	void Start () {
-    mesh = GetComponent<MeshFilter>().mesh;
-    origin = Vector2.zero;
-    Generate();
-	}
-
-  // Update is called once per frame
-  void Update () {
-    
-  }
-	
   public void Generate() {
     blocks = new Block[(int)CHUNK_SIZE.x, (int)CHUNK_SIZE.y];
 
     for (int x = 0; x < CHUNK_SIZE.x; x++) {
       for (int y = 0; y < CHUNK_SIZE.y; y++) {
-        blocks[x, y] = new Block(lowerX + x, lowerY + y, Random.Range(1, 3));
+        blocks[x, y] = new Block(lowerX + x, lowerY + y, terrainGenerator.HeightMap.GetHeight(this, x, y));
       }
     }
 
@@ -47,6 +44,7 @@ public class Chunk : MonoBehaviour {
     vertices = new List<Vector3>();
     uv = new List<Vector2>();
     triangles = new List<int>();
+    colors = new List<Color>();
 
     for (int x = 0; x < CHUNK_SIZE.x; x++) {
       for (int y = 0; y < CHUNK_SIZE.y; y++) {
@@ -59,28 +57,41 @@ public class Chunk : MonoBehaviour {
       }
     }
 
+    var mesh = GetComponent<MeshFilter>().mesh;
     mesh.vertices = vertices.ToArray();
+    mesh.SetColors(colors);
+    // mesh.colors = colors.ToArray();
     mesh.triangles = triangles.ToArray();
     mesh.uv = uv.ToArray();
     mesh.RecalculateNormals();
-    GetComponent<Renderer>().material.shader = Shader.Find("Standard");
+    mesh.RecalculateBounds();
+    // GetComponent<Renderer>().material.shader = Shader.Find("Particles/Alpha Blended");
+    GetComponent<Renderer>().material.shader = Shader.Find("Standard (Vertex Color)");
     GetComponent<Renderer>().material.color = new Color(0.13f, 0.55f, 0.13f);
+    GetComponent<MeshCollider>().sharedMesh = mesh;
   }
 
-  private void addFaceVertices(int x, int y, Vector3 face) {
-    var block = blocks[x, y];
+  private void addFaceVertices(int localX, int localY, Vector3 face) {
+    var block = blocks[localX, localY];
+
+    int x = block.x;
+    int y = block.y;
 
     if (face == Vector3.back) {
       vertices.Add(new Vector3(x, block.Height, y));
       vertices.Add(new Vector3(x, block.Height, y + BLOCK_SIZE));
       vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
       vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y));
+
+      updateColor(block);
       updateUV();
     } else if (face == Vector3.forward) {
       vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y));
       vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
       vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
       vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y));
+
+      updateColor(block);
       updateUV();
     } else {
       int adjX = x + (int)face.x;
@@ -99,9 +110,9 @@ public class Chunk : MonoBehaviour {
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
         } else if (face == Vector3.up) {
           vertices.Add(new Vector3(x, block.Height, y + BLOCK_SIZE));
-          vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
-          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
+          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
+          vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
         } else if (face == Vector3.down) {
           vertices.Add(new Vector3(x, block.Height, y));
           vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y));
@@ -109,8 +120,15 @@ public class Chunk : MonoBehaviour {
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y));
         }
 
+        updateColor(block);
         updateUV();
       }
+    }
+  }
+
+  private void updateColor(Block block) {
+    for (int i = 0; i < 4; i++) {
+      colors.Add(block.Color);
     }
   }
 

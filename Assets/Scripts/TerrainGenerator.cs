@@ -4,10 +4,14 @@ using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour {
   public GameObject cubePrefab;
-  public int x;
-  public int y;
-  public int z;
+  public Chunk chunkPrefab;
+
+  public int xChunks;
+  public int zChunks;
+  public int maxHeight;
+  public int waterHeight;
   public float scale;
+  public HeightMap HeightMap { get; private set; }
 
   // Use this for initialization
   void Start () {
@@ -17,10 +21,16 @@ public class TerrainGenerator : MonoBehaviour {
     var seed = Random.Range(100, 1000);
     var seed2 = Random.Range(100, 1000);
 
-    int waterHeight = 8;
+    var perlinNoise = new PerlinNoise(seed, scale);
+    HeightMap = new HeightMap(perlinNoise, maxHeight);
 
-    var noiseMap = new PerlinNoise(seed).GetNoise(x, z, scale);
+    for (int i = -xChunks/2; i < xChunks/2; i++) {
+      for (int j = -zChunks/2; j < zChunks/2; j++) {
+        var chunk = Chunk.Instantiate(this, i, j) as Chunk;
+      }
+    }
 
+    /*var noiseMap = perlinNoise.GetNoiseMap(0, x, 0, z);
 		for (int i = 0; i < x; i++) {
       for (int k = 0; k < z; k++) {
         var temperature = Mathf.PerlinNoise((i+x+seed)/80f, (k+z+seed)/80f) * 10000;
@@ -38,7 +48,7 @@ public class TerrainGenerator : MonoBehaviour {
           }
         }
       }
-    }
+    }*/
 	}
 	
 	// Update is called once per frame

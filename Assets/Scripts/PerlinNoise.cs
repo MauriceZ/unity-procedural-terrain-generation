@@ -6,29 +6,33 @@ public class PerlinNoise {
   private int octaves;
   private float persistence;
   private float lacunarity;
+  private float scale;
 
-  public PerlinNoise(long seed){
+  public PerlinNoise(long seed, float scale){
     this.seed = seed;
     this.persistence = 0.5f;
     this.lacunarity = 2;
     this.octaves = 4;
+    this.scale = scale;
   }
 
-  public float[,] GetNoise(int x, int z, float scale){
-    var noiseMap = new float[x, z];
+  public float[,] GetNoiseMap(int lowerX, int upperX, int lowerZ, int upperZ){
+    int xRange = upperX - lowerX;
+    int zRange = upperZ - lowerZ;
+
+    var noiseMap = new float[xRange, zRange];
 
     var greatestNoise = float.MinValue;
     var smallestNoise = float.MaxValue;
 
-    for (int i = 0; i < x; i++) {
-      for (int j = 0; j < z; j++) {
-
+    for (int i = 0; i < xRange; i++) {
+      for (int j = 0; j < zRange; j++) {
         var frequency = 1f;
         var amplitude = 1f;
         var noise = 0f;
 
         for (int octave = 0; octave < octaves; octave++) {
-          var noiseValue = Mathf.PerlinNoise(i/scale * frequency + seed, j/scale * frequency + seed);
+          var noiseValue = Mathf.PerlinNoise((lowerX + i)/scale * frequency + seed, (lowerZ + j)/scale * frequency + seed);
           noise += noiseValue * amplitude;
 
           amplitude *= persistence;
@@ -44,10 +48,13 @@ public class PerlinNoise {
       }
     }
 
+    // Debug.Log("g" + greatestNoise);
+    // Debug.Log("s" + smallestNoise);
+
     // normalize
-    for (int i = 0; i < x; i++) {
-      for (int j = 0; j < z; j++) {
-        noiseMap[i, j] = Mathf.InverseLerp(smallestNoise, greatestNoise, noiseMap[i, j]);
+    for (int i = 0; i < xRange; i++) {
+      for (int j = 0; j < zRange; j++) {
+        noiseMap[i, j] = Mathf.InverseLerp(0.35f, 1.25f, noiseMap[i, j]);
       }
     }
 
