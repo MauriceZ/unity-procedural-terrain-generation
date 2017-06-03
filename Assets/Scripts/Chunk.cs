@@ -14,6 +14,8 @@ public class Chunk : MonoBehaviour {
     return chunk;
   }
 
+  public Tree treePrefab;
+
   public Vector2 origin;
   private Block[,] blocks;
   private TerrainGenerator terrainGenerator;
@@ -33,7 +35,12 @@ public class Chunk : MonoBehaviour {
 
     for (int x = 0; x < CHUNK_SIZE.x; x++) {
       for (int y = 0; y < CHUNK_SIZE.y; y++) {
-        blocks[x, y] = new Block(lowerX + x, lowerY + y, terrainGenerator.HeightMap.GetHeight(this, x, y));
+        var height = terrainGenerator.HeightMap.GetHeight(this, x, y);
+        blocks[x, y] = new Block(this, lowerX + x, lowerY + y, height, terrainGenerator.BiomeState);
+
+        if (blocks[x, y].Biome.kind == BiomeState.BiomeKind.Forest && Random.value < 0.05f) {
+          Tree.Instantiate(this, blocks[x, y]);
+        }
       }
     }
 
@@ -60,14 +67,11 @@ public class Chunk : MonoBehaviour {
     var mesh = GetComponent<MeshFilter>().mesh;
     mesh.vertices = vertices.ToArray();
     mesh.SetColors(colors);
-    // mesh.colors = colors.ToArray();
+    mesh.colors = colors.ToArray();
     mesh.triangles = triangles.ToArray();
     mesh.uv = uv.ToArray();
     mesh.RecalculateNormals();
     mesh.RecalculateBounds();
-    // GetComponent<Renderer>().material.shader = Shader.Find("Particles/Alpha Blended");
-    GetComponent<Renderer>().material.shader = Shader.Find("Standard (Vertex Color)");
-    GetComponent<Renderer>().material.color = new Color(0.13f, 0.55f, 0.13f);
     GetComponent<MeshCollider>().sharedMesh = mesh;
   }
 
@@ -109,15 +113,15 @@ public class Chunk : MonoBehaviour {
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
         } else if (face == Vector3.up) {
-          vertices.Add(new Vector3(x, block.Height, y + BLOCK_SIZE));
-          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
-          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
-          vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
-        } else if (face == Vector3.down) {
           vertices.Add(new Vector3(x, block.Height, y));
           vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y));
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y));
           vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y));
+        } else if (face == Vector3.down) {
+          vertices.Add(new Vector3(x, block.Height, y + BLOCK_SIZE));
+          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height, y + BLOCK_SIZE));
+          vertices.Add(new Vector3(x + BLOCK_SIZE, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
+          vertices.Add(new Vector3(x, block.Height + BLOCK_SIZE, y + BLOCK_SIZE));
         }
 
         updateColor(block);
@@ -128,7 +132,7 @@ public class Chunk : MonoBehaviour {
 
   private void updateColor(Block block) {
     for (int i = 0; i < 4; i++) {
-      colors.Add(block.Color);
+      colors.Add(block.Biome.color);
     }
   }
 

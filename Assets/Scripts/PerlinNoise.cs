@@ -22,9 +22,6 @@ public class PerlinNoise {
 
     var noiseMap = new float[xRange, zRange];
 
-    var greatestNoise = float.MinValue;
-    var smallestNoise = float.MaxValue;
-
     for (int i = 0; i < xRange; i++) {
       for (int j = 0; j < zRange; j++) {
         var frequency = 1f;
@@ -40,16 +37,8 @@ public class PerlinNoise {
         }
 
         noiseMap[i, j] = noise;
-        
-        if (noise > greatestNoise)
-          greatestNoise = noise;
-        if (noise < smallestNoise)
-          smallestNoise = noise;
       }
     }
-
-    // Debug.Log("g" + greatestNoise);
-    // Debug.Log("s" + smallestNoise);
 
     // normalize
     for (int i = 0; i < xRange; i++) {

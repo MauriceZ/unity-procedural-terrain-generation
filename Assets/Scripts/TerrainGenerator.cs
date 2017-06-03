@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour {
-  public GameObject cubePrefab;
   public Chunk chunkPrefab;
 
   public int xChunks;
@@ -14,8 +13,8 @@ public class TerrainGenerator : MonoBehaviour {
   public int lookAhead;
   public int lookAheadLimit;
 
-
   public HeightMap HeightMap { get; private set; }
+  public BiomeState BiomeState { get; private set; }
 
   private GameObject player;
   private Dictionary<Vector2, Chunk> renderedChunks;
@@ -25,14 +24,10 @@ public class TerrainGenerator : MonoBehaviour {
   void Start () {
     player = GameObject.Find("Player");
 
-    // var cubeWidth = cubePrefab.transform.lossyScale.x;
-    // var cubeHeight = cubePrefab.transform.lossyScale.y;
-    // var cubeDepth = cubePrefab.transform.lossyScale.z;
     var seed = Random.Range(100, 1000);
-    var seed2 = Random.Range(100, 1000);
-
     var perlinNoise = new PerlinNoise(seed, scale);
-    HeightMap = new HeightMap(perlinNoise, maxHeight);
+    HeightMap = new HeightMap(perlinNoise, maxHeight, waterHeight);
+    BiomeState = new BiomeState(200f, waterHeight, maxHeight);
 
     renderedChunks = new Dictionary<Vector2, Chunk>();
     nonRenderedChunks = new Dictionary<Vector2, Chunk>();
@@ -44,26 +39,6 @@ public class TerrainGenerator : MonoBehaviour {
     }
 
     StartCoroutine(generateInfiniteTerrain());
-
-    /*var noiseMap = perlinNoise.GetNoiseMap(0, x, 0, z);
-		for (int i = 0; i < x; i++) {
-      for (int k = 0; k < z; k++) {
-        var temperature = Mathf.PerlinNoise((i+x+seed)/80f, (k+z+seed)/80f) * 10000;
-        var height = Mathf.RoundToInt(noiseMap[i, k] * y);
-
-        if (height <= waterHeight) {
-          var cube = Instantiate(cubePrefab, new Vector3((i - x/2) * cubeWidth, waterHeight * cubeHeight, (k - z/2) * cubeDepth), Quaternion.identity, transform) as GameObject;
-            cube.GetComponent<Renderer>().material.color = Color.blue;
-        } else {
-          var cube = Instantiate(cubePrefab, new Vector3((i - x/2) * cubeWidth, height * cubeHeight, (k - z/2) * cubeDepth), Quaternion.identity, transform) as GameObject;
-          if (height <= waterHeight + 1) {
-            cube.GetComponent<Renderer>().material.color = Color.yellow;
-          } else {
-            cube.GetComponent<Renderer>().material.color = new Color(0.13f, 0.55f, 0.13f);
-          }
-        }
-      }
-    }*/
 	}
 
   private void generateChunk(int x, int y) {
@@ -85,7 +60,7 @@ public class TerrainGenerator : MonoBehaviour {
 
   private IEnumerator generateInfiniteTerrain() {
     // infinite world generation
-    var delay = new WaitForSeconds(0.5f);
+    var delay = new WaitForSeconds(1f);
 
     while (true) {
       var playerPos = new Vector2(player.transform.position.x, player.transform.position.z);
@@ -117,8 +92,4 @@ public class TerrainGenerator : MonoBehaviour {
     }
 
   }
-  
-  // Update is called once per frame
-  void Update () {
-	}
 }
